@@ -1,5 +1,6 @@
-=== MOBS-MOD for MINETEST-C55 ===
-by PilzAdam
+=== MOBS-MOD for MINETEST ===
+Original by PilzAdam
+Fork by BrandonReese
 
 Inroduction:
 This mod adds some basic hostile and friendly mobs to the game.
@@ -12,12 +13,6 @@ If you want to install this mod only in one world create the folder
 worldmods/ in your worlddirectory.
 For further information or help see:
 http://wiki.minetest.com/wiki/Installing_Mods
-
-How to use the mod:
-See https://github.com/PilzAdam/mobs/wiki
-
-For developers:
-The API documentation is moved to https://github.com/PilzAdam/mobs/wiki/API
 
 License:
 Sourcecode: WTFPL (see below)
