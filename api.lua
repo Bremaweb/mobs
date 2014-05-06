@@ -37,6 +37,8 @@ function mobs:register_mob(name, def)
 		attacks_monsters = def.attacks_monsters or false,
 		group_attack = def.group_attack or false,
 		step = def.step or 0,
+		fov = def.fov or 120,
+		passive = def.passive or false,
 		
 		stimer = 0,
 		timer = 0,
@@ -74,6 +76,30 @@ function mobs:register_mob(name, def)
 		get_velocity = function(self)
 			local v = self.object:getvelocity()
 			return (v.x^2 + v.z^2)^(0.5)
+		end,
+		
+		in_fov = function(self,pos)
+			-- checks if POS is in self's FOV
+			local yaw = self.object:getyaw()
+			if self.drawtype == "side" then
+				yaw = yaw+(math.pi/2)
+			end
+			local vx = math.sin(yaw)
+			local vz = math.cos(yaw)
+			local ds = math.sqrt(vx^2 + vz^2)
+			local ps = math.sqrt(pos.x^2 + pos.z^2)
+			local d = { x = vx / ds, z = vz / ds }
+			local p = { x = pos.x / ps, z = pos.z / ps }
+			
+			local an = ( d.x * p.x ) + ( d.z * p.z )
+			
+			a = math.deg( math.acos( an ) )
+			
+			if a > ( self.fov / 2 ) then
+				return false
+			else
+				return true
+			end
 		end,
 		
 		set_animation = function(self, type)
@@ -143,7 +169,7 @@ function mobs:register_mob(name, def)
 			self.lifetimer = self.lifetimer - dtime
 			if self.lifetimer <= 0 and not self.tamed and self.type ~= "npc" then
 				local player_count = 0
-				for _,obj in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), 20)) do
+				for _,obj in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), 10)) do
 					if obj:is_player() then
 						player_count = player_count+1
 					end
@@ -239,44 +265,42 @@ function mobs:register_mob(name, def)
 				do_env_damage(self)
 			end
 			
-			if ( self.type == "monster" or self.type == "barbarian" ) and minetest.setting_getbool("enable_damage") then
+			-- FIND SOMEONE TO ATTACK
+			if ( self.type == "monster" or self.type == "barbarian" ) and minetest.setting_getbool("enable_damage") and self.state ~= "attack" then
 				local s = self.object:getpos()
 				local inradius = minetest.get_objects_inside_radius(s,self.view_range)
-				for _,oir in pairs(inradius) do
-					local player = nil
-					local type = nil
+				local player = nil
+				local type = nil
+				for _,oir in ipairs(inradius) do
 					if oir:is_player() then
 						player = oir
 						type = "player"
 					else
-						player = oir.object
-						type = oir.type
+						local obj = oir:get_luaentity()
+						if obj then
+							player = obj.object
+							type = obj.type
+						end
 					end
-					--local player = oir.get_luaentity()
+					
 					if type == "player" or type == "npc" then
 						local s = self.object:getpos()
 						local p = player:getpos()
-						local sp = p
+						local sp = s
 						p.y = p.y + 1
 						sp.y = sp.y + 1		-- aim higher to make looking up hills more realistic
 						local dist = ((p.x-s.x)^2 + (p.y-s.y)^2 + (p.z-s.z)^2)^0.5
-						if dist < self.view_range then
-							--if minetest.line_of_sight(s,p,2) == true then
-								if self.attack.dist then
-									if self.attack.dist < dist then
-										self.do_attack(self,player,dist)
-										break
-									end
-								else
-									self.do_attack(self,player,dist)
-									break
-								end
-							--end
+						if dist < self.view_range and self.in_fov(self,p) then
+							if minetest.line_of_sight(sp,p,2) == true then
+								self.do_attack(self,player,dist)
+								break
+							end
 						end
 					end
 				end
 			end
 			
+			-- NPC FIND A MONSTER TO ATTACK
 			if self.type == "npc" and self.attacks_monsters and self.state ~= "attack" then
 				local s = self.object:getpos()
 				local inradius = minetest.get_objects_inside_radius(s,self.view_range)
@@ -289,6 +313,7 @@ function mobs:register_mob(name, def)
 							local dist = ((p.x-s.x)^2 + (p.y-s.y)^2 + (p.z-s.z)^2)^0.5
 							print("attack monster at "..minetest.pos_to_string(obj.object:getpos()))
 							self.do_attack(self,obj.object,dist)
+							break
 						end
 					end
 				end
@@ -302,6 +327,7 @@ function mobs:register_mob(name, def)
 					local dist = ((p.x-s.x)^2 + (p.y-s.y)^2 + (p.z-s.z)^2)^0.5
 					if self.view_range and dist < self.view_range then
 						self.following = player
+						break
 					end
 				end
 			end
@@ -350,16 +376,20 @@ function mobs:register_mob(name, def)
 			end
 			
 			if self.state == "stand" then
+				-- randomly turn
 				if math.random(1, 4) == 1 then
 					-- if there is a player nearby look at them
-					local o = minetest.get_objects_inside_radius(self.object:getpos(), 3)
-					local s = self.object:getpos()
 					local lp = nil
-					local yaw = 0
-					for _,o in ipairs(o) do
-						if o:is_player() then
-							lp = o:getpos()
-							break
+					local s = self.object:getpos()
+					if self.type == "npc" then
+						local o = minetest.get_objects_inside_radius(self.object:getpos(), 3)
+						
+						local yaw = 0
+						for _,o in ipairs(o) do
+							if o:is_player() then
+								lp = o:getpos()
+								break
+							end
 						end
 					end
 					if lp ~= nil then
@@ -557,9 +587,9 @@ function mobs:register_mob(name, def)
 				if tmp and tmp.tamed then
 					self.tamed = tmp.tamed
 				end
-				if tmp and tmp.textures then
+				--[[if tmp and tmp.textures then
 					self.object:set_properties(tmp.textures)
-				end
+				end]]
 			end
 			if self.lifetimer <= 0 and not self.tamed and self.type ~= "npc" then
 				self.object:remove()
@@ -610,19 +640,21 @@ function mobs:register_mob(name, def)
 							object = self.object,
 						})
 					end
-					-- DROP experience
-					local distance_rating = ( ( get_distance({x=0,y=0,z=0},pos) ) / ( skills.get_player_level(hitter:get_player_name()).level * 1000 ) )
-					local emax = math.floor( self.exp_min + ( distance_rating * self.exp_max ) )
-					local expGained = math.random(self.exp_min, emax)
-					skills.add_exp(hitter:get_player_name(),expGained)
-					local expStack = experience.exp_to_items(expGained)
-					for _,stack in ipairs(expStack) do
-						default.drop_item(pos,stack)
+					if minetest.get_modpath("skills") and minetest.get_modpath("experience") then
+						-- DROP experience
+						local distance_rating = ( ( get_distance({x=0,y=0,z=0},pos) ) / ( skills.get_player_level(hitter:get_player_name()).level * 1000 ) )
+						local emax = math.floor( self.exp_min + ( distance_rating * self.exp_max ) )
+						local expGained = math.random(self.exp_min, emax)
+						skills.add_exp(hitter:get_player_name(),expGained)
+						local expStack = experience.exp_to_items(expGained)
+						for _,stack in ipairs(expStack) do
+							default.drop_item(pos,stack)
+						end
 					end
 				end
 			end
 			
-			if self.type == "npc" then
+			if self.passive == false then
 				self.do_attack(self,hitter,1)
 				-- alert other NPCs to the attack
 				local inradius = minetest.get_objects_inside_radius(hitter:getpos(),5)

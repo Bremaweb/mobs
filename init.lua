@@ -400,6 +400,7 @@ mobs:register_mob("mobs:sheep", {
 	end,
 	jump = true,
 	step=1,
+	passive = true,
 })
 mobs:register_spawn("mobs:sheep", {"default:dirt_with_grass"}, 20, 8, 9000, 2, 31000)
 
@@ -451,6 +452,7 @@ mobs:register_mob("mobs:rat", {
 	end,
 	sounds = { },
 	step=1,
+	passive = true,
 })
 mobs:register_spawn("mobs:rat", {"default:dirt_with_grass", "default:stone"}, 20, -1, 7000, 1, 31000)
 
