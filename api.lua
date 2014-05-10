@@ -357,9 +357,9 @@ function mobs:register_mob(name, def)
 								self.v_start = true
 								self.set_velocity(self, self.walk_velocity)
 							else
-								if self.jump and self.get_velocity(self) <= 0.5 and self.object:getvelocity().y == 0 then
+								if self.jump and self.get_velocity(self) <= 1.5 and self.object:getvelocity().y == 0 then
 									local v = self.object:getvelocity()
-									v.y = 5
+									v.y = 6
 									self.object:setvelocity(v)
 								end
 								self.set_velocity(self, self.walk_velocity)
@@ -724,8 +724,6 @@ function mobs:register_spawn(name, nodes, max_light, min_light, chance, active_o
 			if spawn_func and not spawn_func(pos, node) then
 				return
 			end
-			
-			print("[mobs] Add "..name.." at "..minetest.pos_to_string(pos))
 			
 			if minetest.setting_getbool("display_mob_spawn") then
 				minetest.chat_send_all("[mobs] Add "..name.." at "..minetest.pos_to_string(pos))
