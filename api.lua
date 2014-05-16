@@ -39,6 +39,8 @@ function mobs:register_mob(name, def)
 		step = def.step or 0,
 		fov = def.fov or 120,
 		passive = def.passive or false,
+		recovery_time = def.recovery_time or 0.5,
+		knock_back = def.knock_back or 3,
 		
 		stimer = 0,
 		timer = 0,
@@ -49,6 +51,8 @@ function mobs:register_mob(name, def)
 		old_y = nil,
 		lifetimer = 600,
 		tamed = false,
+		last_state = nil,
+		pause_timer = 0,
 		
 		do_attack = function(self, player, dist)
 			if self.state ~= "attack" then
@@ -207,6 +211,16 @@ function mobs:register_mob(name, def)
 					end
 					self.old_y = self.object:getpos().y
 				end
+			end
+			
+			-- if pause state then this is where the loop ends
+			-- pause is only set after a monster is hit
+			if self.pause_timer > 0 then
+				self.pause_timer = self.pause_timer - dtime
+				if self.pause_timer <= 0 then
+					self.pause_timer = 0
+				end
+				return
 			end
 			
 			self.timer = self.timer+dtime
@@ -605,11 +619,11 @@ function mobs:register_mob(name, def)
 			return minetest.serialize(tmp)
 		end,
 		
-		on_punch = function(self, hitter)
+		on_punch = function(self, hitter, tflp, tool_capabilities, dir)
 
 			local weapon = hitter:get_wielded_item()
-			if weapon:get_definition().tool_capabilities ~= nil then
-				local wear = ( weapon:get_definition().tool_capabilities.full_punch_interval / 75 ) * 65535
+			if tool_capabilities ~= nil then
+				local wear = ( tool_capabilities.full_punch_interval / 75 ) * 65535
 				weapon:add_wear(wear)
 				hitter:set_wielded_item(weapon)
 			end
@@ -624,7 +638,7 @@ function mobs:register_mob(name, def)
 					object = hitter,
 				})
 			end	
-			
+
 			if self.object:get_hp() <= 0 then
 				if hitter and hitter:is_player() and hitter:get_inventory() then
 					pos = self.object:getpos()
@@ -654,8 +668,29 @@ function mobs:register_mob(name, def)
 				end
 			end
 			
+			-- knock back effect, adapted from blockmen's pyramids mod
+			-- https://github.com/BlockMen/pyramids
+			local kb = self.knock_back
+			local r = self.recovery_time
+			
+			if tflp < tool_capabilities.full_punch_interval then
+				kb = kb * ( tflp / tool_capabilities.full_punch_interval )
+				r = r * ( tflp / tool_capabilities.full_punch_interval )
+			end
+			
+			local ykb=2
+			local v = self.object:getvelocity()
+			if v.y ~= 0 then
+				ykb = 0
+			end 
+			
+			self.object:setvelocity({x=dir.x*kb,y=ykb,z=dir.z*kb})
+			self.pause_timer = r
+			
 			if self.passive == false then
-				self.do_attack(self,hitter,1)
+				if self.state ~= "attack" then
+					self.do_attack(self,hitter,1)
+				end
 				-- alert other NPCs to the attack
 				local inradius = minetest.get_objects_inside_radius(hitter:getpos(),5)
 				for _, oir in pairs(inradius) do
