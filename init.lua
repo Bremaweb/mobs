@@ -401,6 +401,8 @@ mobs:register_mob("mobs:sheep", {
 	jump = true,
 	step=1,
 	passive = true,
+	blood_offset = 0.25,
+	blood_amount = 20,
 })
 mobs:register_spawn("mobs:sheep", {"default:dirt_with_grass"}, 20, 8, 9000, 2, 31000)
 
@@ -453,6 +455,8 @@ mobs:register_mob("mobs:rat", {
 	sounds = { },
 	step=1,
 	passive = true,
+	blood_amount = 5,
+	blood_offset = 0,
 })
 mobs:register_spawn("mobs:rat", {"default:dirt_with_grass", "default:stone"}, 20, -1, 7000, 1, 31000)
 
@@ -525,6 +529,7 @@ mobs:register_mob("mobs:oerkki", {
 		attack = "mobs_oerkki_attack"
 	},
 	step=0.5,
+	blood_amount = 0,
 	
 })
 mobs:register_spawn("mobs:oerkki", {"default:stone"}, 3, -1, 7000, 3, -10)
@@ -679,6 +684,8 @@ mobs:register_mob("mobs:barbarian1", {
 		attack = "default_punch2",
 	},
 	step=0.5,
+	blood_amount = 35,
+	blood_offset = 0.25,
 })
 
 mobs:register_mob("mobs:barbarian2", {
@@ -727,6 +734,8 @@ mobs:register_mob("mobs:barbarian2", {
 		attack = "default_punch2",
 	},
 	step=0.5,
+	blood_amount = 35,
+	blood_offset = 0.25,
 })
 
 local female_npc_base = {
@@ -776,6 +785,8 @@ type = "npc",
 	attacks_monsters=false,
 	peaceful = true,
 	step=2,
+	blood_amount = 35,
+	blood_offset = 0.25,
 }
 
 local female2 = female_npc_base
@@ -838,6 +849,8 @@ local male_npc_base = {
 	peaceful = true,
 	group_attack = true,
 	step=2,
+	blood_amount = 35,
+	blood_offset = 0.25,
 }
 
 local male2 = female_npc_base

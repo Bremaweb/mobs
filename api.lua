@@ -41,6 +41,9 @@ function mobs:register_mob(name, def)
 		passive = def.passive or false,
 		recovery_time = def.recovery_time or 0.5,
 		knock_back = def.knock_back or 3,
+		blood_offset = def.blood_offset or 0,
+		blood_amount = def.blood_amount or 15,
+		blood_texture = def.blood_texture or "mobs_blood.png",
 		
 		stimer = 0,
 		timer = 0,
@@ -638,10 +641,10 @@ function mobs:register_mob(name, def)
 					object = hitter,
 				})
 			end	
-
+			
+			local pos = self.object:getpos()
 			if self.object:get_hp() <= 0 then
 				if hitter and hitter:is_player() and hitter:get_inventory() then
-					pos = self.object:getpos()
 					for _,drop in ipairs(self.drops) do
 						if math.random(1, drop.chance) == 1 then
 							local d = ItemStack(drop.name.." "..math.random(drop.min, drop.max))
@@ -667,6 +670,9 @@ function mobs:register_mob(name, def)
 					end
 				end
 			end
+			
+			
+			blood_particles(pos,self.blood_offset,self.blood_amount,self.blood_texture)
 			
 			-- knock back effect, adapted from blockmen's pyramids mod
 			-- https://github.com/BlockMen/pyramids
@@ -804,6 +810,29 @@ function mobs:register_arrow(name, def)
 			end
 		end
 	})
+end
+
+blood_particles = function(pos,offset,amount,texture)
+	if amount > 0 then
+		local p = pos
+		p.y = p.y + offset
+		minetest.add_particlespawner(
+	        amount, --amount
+	        0.25, --time
+	        {x=p.x-0.2, y=p.y-0.2, z=p.z-0.2}, --minpos
+	        {x=p.x+0.2, y=p.y+0.2, z=p.z+0.2}, --maxpos
+	        {x=0, y=-2, z=0}, --minvel
+	        {x=2, y=2, z=2}, --maxvel
+	        {x=-4,y=-4,z=-4}, --minacc
+	        {x=4,y=-4,z=4}, --maxacc
+	        0.1, --minexptime
+	        1, --maxexptime
+	        0.5, --minsize
+	        1, --maxsize
+	        false, --collisiondetection
+	        texture --texture
+	    )
+    end
 end
 
 function get_distance(pos1,pos2)
