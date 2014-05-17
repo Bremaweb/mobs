@@ -821,7 +821,7 @@ function get_distance(pos1,pos2)
 end
 
 blood_particles = function(pos,offset,amount,texture)
-	if amount > 0 then
+	if amount > 0 and pos ~= nil then
 		local p = pos
 		p.y = p.y + offset
 		minetest.add_particlespawner(
