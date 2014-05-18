@@ -507,12 +507,6 @@ function mobs:register_mob(name, def)
 								full_punch_interval=1.0,
 								damage_groups = {fleshy=self.damage}
 							}, vec)
-							if math.random(0,3) == 3 and self.attack.player:is_player() then
-								local snum = math.random(1,4)
-								minetest.sound_play("default_hurt"..tostring(snum),{
-									object = self.attack.player,
-								})
-							end
 							if self.attack.player:get_hp() <= 0 then
 								self.state = "stand"
 								self:set_animation("stand")
@@ -624,23 +618,7 @@ function mobs:register_mob(name, def)
 		
 		on_punch = function(self, hitter, tflp, tool_capabilities, dir)
 
-			local weapon = hitter:get_wielded_item()
-			if tool_capabilities ~= nil then
-				local wear = ( tool_capabilities.full_punch_interval / 75 ) * 65535
-				weapon:add_wear(wear)
-				hitter:set_wielded_item(weapon)
-			end
-			
-			if weapon:get_definition().sounds ~= nil then
-				local s = math.random(0,#weapon:get_definition().sounds)
-				minetest.sound_play(weapon:get_definition().sounds[s], {
-					object=hitter,
-				})
-			else
-				minetest.sound_play("default_sword_wood", {
-					object = hitter,
-				})
-			end	
+			process_weapon(hitter,tflp,tool_capabilities)
 			
 			local pos = self.object:getpos()
 			if self.object:get_hp() <= 0 then
@@ -715,7 +693,7 @@ function mobs:register_mob(name, def)
 end
 
 mobs.spawning_mobs = {}
-function mobs:register_spawn(name, nodes, max_light, min_light, chance, active_object_count, max_height, spawn_func)
+function mobs:register_spawn(name, nodes, max_light, min_light, chance, active_object_count, max_height, min_dist, max_dist, spawn_func)
 	mobs.spawning_mobs[name] = true	
 	minetest.register_abm({
 		nodenames = nodes,
@@ -723,7 +701,9 @@ function mobs:register_spawn(name, nodes, max_light, min_light, chance, active_o
 		interval = 30,
 		chance = chance,
 		action = function(pos, node, _, active_object_count_wider)
+			print("Spawning mob "..name.." at "..minetest.pos_to_string(pos))
 			if active_object_count_wider > active_object_count then
+				print("Too many "..tostring(active_object_count_wider))
 				return
 			end
 			if not mobs.spawning_mobs[name] then
@@ -741,28 +721,52 @@ function mobs:register_spawn(name, nodes, max_light, min_light, chance, active_o
 			
 			pos.y = pos.y+1
 			if not minetest.get_node_light(pos) then
+				print("Too much light 1")
 				return
 			end
 			if minetest.get_node_light(pos) > max_light then
+				print("Too much light 2")
 				return
 			end
 			if minetest.get_node_light(pos) < min_light then
+				print("Too much light 3")
 				return
 			end
 			if pos.y > max_height then
+				print("Too high")
 				return
 			end
 			
 			if minetest.registered_nodes[minetest.get_node(pos).name].walkable == true or minetest.registered_nodes[minetest.get_node(pos).name].walkable == nil then
+				print("In node")
 				return
 			end
 			
 			pos.y = pos.y+1
 			if minetest.registered_nodes[minetest.get_node(pos).name].walkable == true or minetest.registered_nodes[minetest.get_node(pos).name].walkable == nil then
+				print("in node")
 				return
 			end
 			
+			if min_dist == nil then
+				min_dist = {x=-1,z=-1}
+			end
+			if max_dist == nil then
+				max_dist = {x=33000,z=33000}
+			end
+			
+			if math.abs(pos.x) < min_dist.x or math.abs(pos.z) < min_dist.z then
+				print("Too close")
+				return
+			end
+			
+			if math.abs(pos.x) > max_dist.x or math.abs(pos.z) > max_dist.z then
+				print("Too far")
+				return
+			end
+						
 			if spawn_func and not spawn_func(pos, node) then
+				print("Exec spawn function")
 				return
 			end
 			
@@ -802,11 +806,9 @@ function mobs:register_arrow(name, def)
 			end
 			pos.y = pos.y-1
 			for _,player in pairs(minetest.get_objects_inside_radius(pos, 1)) do
-				if player:is_player() then
-					self.hit_player(self, player)
-					self.object:remove()
-					return
-				end
+				self.hit_player(self, player)
+				self.object:remove()
+				return
 			end
 		end
 	})
@@ -842,3 +844,24 @@ blood_particles = function(pos,offset,amount,texture)
 	    )
     end
 end
+
+function process_weapon(player, time_from_last_punch, tool_capabilities)
+local weapon = player:get_wielded_item()
+	if tool_capabilities ~= nil then
+		local wear = ( tool_capabilities.full_punch_interval / 75 ) * 65535
+		weapon:add_wear(wear)
+		player:set_wielded_item(weapon)
+	end
+	
+	if weapon:get_definition().sounds ~= nil then
+		local s = math.random(0,#weapon:get_definition().sounds)
+		minetest.sound_play(weapon:get_definition().sounds[s], {
+			object=player,
+		})
+	else
+		minetest.sound_play("default_sword_wood", {
+			object = player,
+		})
+	end	
+end
+

@@ -61,6 +61,9 @@ mobs:register_mob("mobs:dirt_monster", {
 		death = "mob_death",
 	},
 	step = 0.5,
+	blood_amount=30,
+	blood_offset=.25,
+	blood_texture = "default_dirt.png",
 })
 
 mobs:register_mob("mobs:dirt_monster2", {
@@ -110,6 +113,9 @@ mobs:register_mob("mobs:dirt_monster2", {
 		death = "mob_death1",
 	},
 	step = 0.5,
+	blood_amount=30,
+	blood_offset=.25,
+	blood_texture = "default_dirt.png",
 })
 
 mobs:register_spawn("mobs:dirt_monster", {"default:dirt_with_grass"}, 3, -1, 5000, 3, 31000)
@@ -599,13 +605,6 @@ mobs:register_arrow("mobs:fireball", {
 			damage_groups = {fleshy=4},
 		}, vec)
 		
-		local snum = math.random(1,4)
-		minetest.sound_play("default_hurt"..tostring(snum),{
-			pos = p,
-			max_hear_distance = 50,
-			gain = 10,
-		})
-		
 		local pos = self.object:getpos()
 		for dx=-1,1 do
 			for dy=-1,1 do
@@ -867,3 +866,54 @@ mobs:register_mob("mobs:male3_npc", male3)
 if minetest.setting_get("log_mods") then
 	minetest.log("action", "mobs loaded")
 end
+
+mobs:register_mob("mobs:spider",{
+	type = "monster",
+	hp_min = 15,
+	hp_max = 40,
+	exp_min = 3,
+	exp_max = 20,
+	collisionbox = {-0.9, -0.01, -0.7, 0.7, 0.6, 0.7},
+	textures = {"mobs_spider.png"},
+	visual_size = {x=7,y=7},
+	visual = "mesh",
+	mesh = "mobs_spider.x",
+	makes_footstep_sound = true,
+	view_range = 15,
+	walk_velocity = 1,
+	run_velocity = 3,
+    armor = 200,
+	damage = 3,
+	drops = {
+		{name = "farming:string",
+		chance = 70,
+		min = 3,
+		max = 6,},
+	},
+    light_resistant = false,
+	drawtype = "front",
+	water_damage = 5,
+	lava_damage = 5,
+	light_damage = 0,
+	on_rightclick = nil,
+	attack_type = "dogfight",
+	animation = {
+		speed_normal = 15,
+		speed_run = 15,
+		stand_start = 1,
+		stand_end = 1,
+		walk_start = 20,
+		walk_end = 40,
+		run_start = 20,
+		run_end = 40,
+		punch_start = 50,
+		punch_end = 90,
+	},
+	jump = true,
+	sounds = {},
+	step = 1,
+	blood_amount = 22,
+	blood_offset = 0.1,
+})
+mobs:register_spawn("mobs:spider", {"default:leaves", "default:jungleleaves", "mg:savannaleaves"}, 22, -1, 7000, 4, 31000)
+mobs:register_spawn("mobs:spider", {"default:leaves", "default:jungleleaves", "mg:savannaleaves"}, 7, -1, 3000, 6, 31000)
