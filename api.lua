@@ -44,6 +44,7 @@ function mobs:register_mob(name, def)
 		blood_offset = def.blood_offset or 0,
 		blood_amount = def.blood_amount or 15,
 		blood_texture = def.blood_texture or "mobs_blood.png",
+		rewards = def.rewards or nil,
 		
 		stimer = 0,
 		timer = 0,
@@ -328,7 +329,6 @@ function mobs:register_mob(name, def)
 							-- attack monster
 							local p = obj.object:getpos()
 							local dist = ((p.x-s.x)^2 + (p.y-s.y)^2 + (p.z-s.z)^2)^0.5
-							print("attack monster at "..minetest.pos_to_string(obj.object:getpos()))
 							self.do_attack(self,obj.object,dist)
 							break
 						end
@@ -646,6 +646,39 @@ function mobs:register_mob(name, def)
 							default.drop_item(pos,stack)
 						end
 					end
+					
+					-- see if there are any NPCs to shower you with rewards
+					if self.type ~= "npc" then
+						local inradius = minetest.get_objects_inside_radius(hitter:getpos(),10)
+						for _, oir in pairs(inradius) do
+							local obj = oir:get_luaentity()
+							if obj then	
+								if obj.type == "npc" and obj.rewards ~= nil then
+									local yaw = nil
+									local lp = hitter:getpos()
+									local s = obj.object:getpos()
+									local vec = {x=lp.x-s.x, y=1, z=lp.z-s.z}
+									yaw = math.atan(vec.z/vec.x)+math.pi/2
+									if self.drawtype == "side" then
+										yaw = yaw+(math.pi/2)
+									end
+									if lp.x > s.x then
+										yaw = yaw+math.pi
+									end
+									obj.object:setyaw(yaw)
+									local x = math.sin(yaw) * -2
+									local z = math.cos(yaw) * 2
+									acc = {x=x, y=-5, z=z}
+									for _, r in pairs(obj.rewards) do
+										if math.random(0,100) < r.chance then
+											default.drop_item(obj.object:getpos(),r.item, vec, acc)
+										end
+									end
+								end
+							end
+						end
+					end
+					
 				end
 			end
 			
@@ -671,6 +704,7 @@ function mobs:register_mob(name, def)
 			self.object:setvelocity({x=dir.x*kb,y=ykb,z=dir.z*kb})
 			self.pause_timer = r
 			
+			-- attack puncher and call other mobs for help
 			if self.passive == false then
 				if self.state ~= "attack" then
 					self.do_attack(self,hitter,1)
@@ -701,9 +735,7 @@ function mobs:register_spawn(name, nodes, max_light, min_light, chance, active_o
 		interval = 30,
 		chance = chance,
 		action = function(pos, node, _, active_object_count_wider)
-			print("Spawning mob "..name.." at "..minetest.pos_to_string(pos))
 			if active_object_count_wider > active_object_count then
-				print("Too many "..tostring(active_object_count_wider))
 				return
 			end
 			if not mobs.spawning_mobs[name] then
@@ -721,30 +753,24 @@ function mobs:register_spawn(name, nodes, max_light, min_light, chance, active_o
 			
 			pos.y = pos.y+1
 			if not minetest.get_node_light(pos) then
-				print("Too much light 1")
 				return
 			end
 			if minetest.get_node_light(pos) > max_light then
-				print("Too much light 2")
 				return
 			end
 			if minetest.get_node_light(pos) < min_light then
-				print("Too much light 3")
 				return
 			end
 			if pos.y > max_height then
-				print("Too high")
 				return
 			end
 			
 			if minetest.registered_nodes[minetest.get_node(pos).name].walkable == true or minetest.registered_nodes[minetest.get_node(pos).name].walkable == nil then
-				print("In node")
 				return
 			end
 			
 			pos.y = pos.y+1
 			if minetest.registered_nodes[minetest.get_node(pos).name].walkable == true or minetest.registered_nodes[minetest.get_node(pos).name].walkable == nil then
-				print("in node")
 				return
 			end
 			
@@ -756,17 +782,14 @@ function mobs:register_spawn(name, nodes, max_light, min_light, chance, active_o
 			end
 			
 			if math.abs(pos.x) < min_dist.x or math.abs(pos.z) < min_dist.z then
-				print("Too close")
 				return
 			end
 			
 			if math.abs(pos.x) > max_dist.x or math.abs(pos.z) > max_dist.z then
-				print("Too far")
 				return
 			end
 						
 			if spawn_func and not spawn_func(pos, node) then
-				print("Exec spawn function")
 				return
 			end
 			

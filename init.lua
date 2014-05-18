@@ -786,6 +786,11 @@ type = "npc",
 	step=2,
 	blood_amount = 35,
 	blood_offset = 0.25,
+	rewards = {
+		{chance=90, item="default:bread"},
+		{chance=40, item="experience:6_exp"},
+		{chance=60, item="potions:magic_replenish1"},
+	},
 }
 
 local female2 = female_npc_base
@@ -850,22 +855,23 @@ local male_npc_base = {
 	step=2,
 	blood_amount = 35,
 	blood_offset = 0.25,
+	rewards = {
+		{chance=90, item="default:apple"},
+		{chance=60, item="experience:6_exp"},
+		{chance=50, item="potions:magic_replenish1"},
+	},
 }
 
-local male2 = female_npc_base
+local male2 = male_npc_base
 male2.textures = {"mobs_male2.png", "3d_armor_trans.png","3d_armor_trans.png"}
 
-local male3 = female_npc_base
+local male3 = male_npc_base
 male3.textures = {"mobs_male3.png", "3d_armor_trans.png","3d_armor_trans.png"}
 
 
 mobs:register_mob("mobs:male1_npc", male_npc_base)
 mobs:register_mob("mobs:male2_npc", male2)
 mobs:register_mob("mobs:male3_npc", male3)
-
-if minetest.setting_get("log_mods") then
-	minetest.log("action", "mobs loaded")
-end
 
 mobs:register_mob("mobs:spider",{
 	type = "monster",
@@ -910,10 +916,14 @@ mobs:register_mob("mobs:spider",{
 		punch_end = 90,
 	},
 	jump = true,
-	sounds = {},
+	sounds = {attack = "mobs_slash_attack",},
 	step = 1,
 	blood_amount = 22,
 	blood_offset = 0.1,
 })
 mobs:register_spawn("mobs:spider", {"default:leaves", "default:jungleleaves", "mg:savannaleaves"}, 22, -1, 7000, 4, 31000)
 mobs:register_spawn("mobs:spider", {"default:leaves", "default:jungleleaves", "mg:savannaleaves"}, 7, -1, 3000, 6, 31000)
+
+if minetest.setting_get("log_mods") then
+	minetest.log("action", "mobs loaded")
+end
